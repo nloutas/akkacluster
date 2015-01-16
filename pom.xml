@@ -50,10 +50,15 @@
   </reporting>
 
   <dependencies>
-	<dependency>
-	  <groupId>com.typesafe.akka</groupId>
-	  <artifactId>akka-cluster_2.10</artifactId>
-	  <version>2.3.8</version>
+    <dependency>
+		  <groupId>com.typesafe.akka</groupId>
+		  <artifactId>akka-cluster_2.10</artifactId>
+		  <version>2.3.8</version>
+	  </dependency>
+	  <dependency>
+			<groupId>com.typesafe.akka</groupId>
+			<artifactId>akka-remote_2.10</artifactId>
+			<version>2.3.8</version>
     </dependency>
   </dependencies>
 
