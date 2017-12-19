@@ -1,5 +1,6 @@
-package com.emnify.cluster.transformation;
+package com.emnify.cluster;
 
+import com.emnify.cluster.simple.EndpointSupervisor;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
@@ -7,6 +8,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 
 public class TransformationBackendMain {
+
 
   public static void main(String[] args) {
     // Override the configuration of the port when specified as program argument
@@ -18,6 +20,7 @@ public class TransformationBackendMain {
     ActorSystem system = ActorSystem.create("ClusterSystem", config);
 
     system.actorOf(Props.create(TransformationBackend.class), "backend");
+    system.actorOf(Props.create(EndpointSupervisor.class), "endpoints");
 
   }
 

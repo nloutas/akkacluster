@@ -1,9 +1,6 @@
-/**
- *
- */
 package com.emnify.cluster.simple;
 
-import akka.actor.UntypedActor;
+import akka.actor.AbstractActor;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
 import akka.cluster.ClusterEvent.MemberEvent;
@@ -17,17 +14,15 @@ import akka.event.LoggingAdapter;
  * @author A team
  *
  */
-public class SimpleClusterListener extends UntypedActor {
+public class ClusterListener extends AbstractActor {
   LoggingAdapter log = Logging.getLogger(getContext().system(), this);
   Cluster cluster = Cluster.get(getContext().system());
 
   // subscribe to cluster changes
   @Override
   public void preStart() {
-    // #subscribe
     cluster.subscribe(getSelf(), ClusterEvent.initialStateAsEvents(), MemberEvent.class,
         UnreachableMember.class);
-    // #subscribe
   }
 
   // re-subscribe when restart
@@ -37,20 +32,17 @@ public class SimpleClusterListener extends UntypedActor {
   }
 
   @Override
-  public void onReceive(Object message) {
-    if (message instanceof MemberUp) {
-      MemberUp mUp = (MemberUp) message;
-      log.info("Member is Up: {}", mUp.member());
-    } else if (message instanceof UnreachableMember) {
-      UnreachableMember mUnreachable = (UnreachableMember) message;
-      log.info("Member detected as unreachable: {}", mUnreachable.member());
-    } else if (message instanceof MemberRemoved) {
-      MemberRemoved mRemoved = (MemberRemoved) message;
-      log.info("Member is Removed: {}", mRemoved.member());
-    } else if (message instanceof MemberEvent) {
+  public Receive createReceive() {
+    return receiveBuilder().match(UnreachableMember.class, message -> {
+      log.info("Member detected as unreachable: {}", message.member());
+    }).match(MemberRemoved.class, message -> {
+      log.info("Member is Removed: {}", message.member());
+
+    }).match(MemberEvent.class, message -> {
       // ignore
-    } else {
-      unhandled(message);
-    }
+    }).match(MemberUp.class, message -> {
+      log.info("Member is Up: {}", message.member());
+    }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
+
 }

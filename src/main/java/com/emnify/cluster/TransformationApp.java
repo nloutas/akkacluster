@@ -1,4 +1,4 @@
-package com.emnify.cluster.transformation;
+package com.emnify.cluster;
 
 public class TransformationApp {
 

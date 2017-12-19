@@ -1,4 +1,4 @@
-package com.emnify.cluster.transformation;
+package com.emnify.cluster.messages;
 
 import java.io.Serializable;
 
@@ -6,6 +6,10 @@ import java.io.Serializable;
 public interface TransformationMessages {
 
   public static class TransformationJob implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private final String text;
 
     public TransformationJob(String text) {
@@ -18,6 +22,10 @@ public interface TransformationMessages {
   }
 
   public static class TransformationResult implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private final String text;
 
     public TransformationResult(String text) {
@@ -35,6 +43,10 @@ public interface TransformationMessages {
   }
 
   public static class JobFailed implements Serializable {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
     private final String reason;
     private final TransformationJob job;
 

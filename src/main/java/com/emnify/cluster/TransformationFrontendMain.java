@@ -1,21 +1,22 @@
-package com.emnify.cluster.transformation;
+package com.emnify.cluster;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
+import static akka.pattern.Patterns.ask;
 
-import com.emnify.cluster.transformation.TransformationMessages.TransformationJob;
+import com.emnify.cluster.messages.TransformationMessages.TransformationJob;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
-import scala.concurrent.ExecutionContext;
-import scala.concurrent.duration.Duration;
-import scala.concurrent.duration.FiniteDuration;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.dispatch.OnSuccess;
 import akka.util.Timeout;
-import static akka.pattern.Patterns.ask;
+import scala.concurrent.ExecutionContext;
+import scala.concurrent.duration.Duration;
+import scala.concurrent.duration.FiniteDuration;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TransformationFrontendMain {
 
@@ -35,14 +36,16 @@ public class TransformationFrontendMain {
     final ExecutionContext ec = system.dispatcher();
     final AtomicInteger counter = new AtomicInteger();
     system.scheduler().schedule(interval, interval, new Runnable() {
+      @SuppressWarnings("deprecation")
       public void run() {
-        ask(frontend,
-            new TransformationJob("hello-" + counter.incrementAndGet()),
-            timeout).onSuccess(new OnSuccess<Object>() {
-          public void onSuccess(Object result) {
-            System.out.println(result);
-          }
-        }, ec);
+        TransformationJob msg = new TransformationJob("hello-" + counter.incrementAndGet());
+        ask(frontend, msg, timeout)
+            .onSuccess(new OnSuccess<Object>() {
+              public void onSuccess(Object result) {
+                System.out.println(result);
+              }
+            }, ec
+        );
       }
 
     }, ec);
