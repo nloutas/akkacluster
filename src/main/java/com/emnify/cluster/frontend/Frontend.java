@@ -1,4 +1,4 @@
-package com.emnify.cluster;
+package com.emnify.cluster.frontend;
 
 import static com.emnify.cluster.messages.TransformationMessages.BACKEND_REGISTRATION;
 
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // frontend
-public class TransformationFrontend extends AbstractActor {
+public class Frontend extends AbstractActor {
   LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
   List<ActorRef> backends = new ArrayList<ActorRef>();

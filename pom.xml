@@ -108,7 +108,7 @@
         <version>1.6.0</version>
         <configuration>
           <killAfter>-1</killAfter>
-          <mainClass>com.emnify.cluster.TransformationApp</mainClass>
+          <mainClass>com.emnify.cluster.ClusterApp</mainClass>
           <additionalClasspathElements>
             <additionalClasspathElement>${basedir}/config</additionalClasspathElement>
           </additionalClasspathElements>

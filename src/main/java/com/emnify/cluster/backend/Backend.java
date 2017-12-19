@@ -1,4 +1,4 @@
-package com.emnify.cluster;
+package com.emnify.cluster.backend;
 
 import static com.emnify.cluster.messages.TransformationMessages.BACKEND_REGISTRATION;
 
@@ -15,7 +15,7 @@ import akka.cluster.Member;
 import akka.cluster.MemberStatus;
 
 
-public class TransformationBackend extends AbstractActor {
+public class Backend extends AbstractActor {
   LoggingAdapter log = Logging.getLogger(getContext().system(), this);
 
   Cluster cluster = Cluster.get(getContext().system());

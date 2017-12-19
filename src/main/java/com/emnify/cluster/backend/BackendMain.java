@@ -1,17 +1,16 @@
-package com.emnify.cluster;
+package com.emnify.cluster.backend;
 
-import com.emnify.cluster.backend.EndpointActor;
-import com.emnify.cluster.backend.EndpointSupervisor;
 import com.emnify.cluster.messages.ClusterManagement;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.sharding.ClusterShardingSettings;
 
-public class TransformationBackendMain {
+public class BackendMain {
 
 
   public static void main(String[] args) {
@@ -25,12 +24,12 @@ public class TransformationBackendMain {
 
     // register Endpoint type in ClusterSharding Region
     ClusterShardingSettings settings = ClusterShardingSettings.create(system);
-    ClusterSharding.get(system).start("Endpoint", Props.create(EndpointActor.class), settings,
-        ClusterManagement.MESSAGE_EXTRACTOR);
+    final ActorRef epShardingRegion = ClusterSharding.get(system).start("Endpoint",
+        Props.create(EndpointActor.class), settings, ClusterManagement.MESSAGE_EXTRACTOR);
 
     // start top actors
-    system.actorOf(Props.create(TransformationBackend.class), "backend");
-    system.actorOf(Props.create(EndpointSupervisor.class), "endpoints");
+    system.actorOf(Props.create(Backend.class), "backend");
+    system.actorOf(Props.create(EndpointSupervisor.class, epShardingRegion), "endpoints");
 
   }
 

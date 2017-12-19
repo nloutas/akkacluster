@@ -1,8 +1,7 @@
-package com.emnify.cluster;
+package com.emnify.cluster.frontend;
 
 import static akka.pattern.Patterns.ask;
 
-import com.emnify.cluster.frontend.ProfileSupervisor;
 import com.emnify.cluster.messages.ClusterManagement;
 import com.emnify.cluster.messages.TransformationMessages.TransformationJob;
 import com.typesafe.config.Config;
@@ -22,7 +21,8 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class TransformationFrontendMain {
+public class FrontendMain {
+  private static ActorSystem system;
 
   public static void main(String[] args) {
     // Override the configuration of the port when specified as program argument
@@ -31,18 +31,25 @@ public class TransformationFrontendMain {
       withFallback(ConfigFactory.parseString("akka.cluster.roles = [frontend]")).
       withFallback(ConfigFactory.load());
 
-    ActorSystem system = ActorSystem.create("ClusterSystem", config);
+    system = ActorSystem.create("ClusterSystem", config);
 
     // register Endpoint type ShardRegion actor in Proxy Only Mode
     final ActorRef epShardRegionProxy = ClusterSharding.get(system).startProxy("Endpoint",
         Optional.of("frontend"), ClusterManagement.MESSAGE_EXTRACTOR);
-    system.actorOf(Props.create(ProfileSupervisor.class, epShardRegionProxy), "profiles");
-
+    final ActorRef profileSupervisor =
+        system.actorOf(Props.create(ProfileSupervisor.class, epShardRegionProxy), "profiles");
+    // send a message to create actors for EP 1
+    profileSupervisor.tell(new ClusterManagement.QueryById(1L), ActorRef.noSender());
 
 
     // Transformation Frontend
+    // transformationMessaging();
+
+  }
+
+  private static void transformationMessaging() {
     final ActorRef frontend = system.actorOf(
-        Props.create(TransformationFrontend.class), "frontend");
+        Props.create(Frontend.class), "frontend");
     final FiniteDuration interval = Duration.create(2, TimeUnit.SECONDS);
     final Timeout timeout = new Timeout(Duration.create(5, TimeUnit.SECONDS));
     final ExecutionContext ec = system.dispatcher();
@@ -61,6 +68,6 @@ public class TransformationFrontendMain {
       }
 
     }, ec);
-
   }
+
 }

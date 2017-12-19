@@ -18,10 +18,11 @@ import akka.event.LoggingAdapter;
  */
 public class EndpointSupervisor extends AbstractActor {
   LoggingAdapter log = Logging.getLogger(getContext().system(), this);
-
+  private final ActorRef epShardingRegion;
   // final Key<ORMap<Long, Long>> imsi2epid = ORMapKey.create("imsi2epid");
 
-  public EndpointSupervisor() {
+  public EndpointSupervisor(ActorRef epShardingRegion) {
+    this.epShardingRegion = epShardingRegion;
   }
 
   @Override
@@ -37,7 +38,7 @@ public class EndpointSupervisor extends AbstractActor {
     return ClusterSharding.get(getContext().system()).shardRegion("Endpoint");
   }
 
-  public static Props props() {
-    return Props.create(EndpointSupervisor.class, () -> new EndpointSupervisor());
+  public static Props props(ActorRef epShardingRegion) {
+    return Props.create(EndpointSupervisor.class, () -> new EndpointSupervisor(epShardingRegion));
   }
 }
