@@ -2,6 +2,8 @@ package com.emnify.cluster;
 
 import static akka.pattern.Patterns.ask;
 
+import com.emnify.cluster.frontend.ProfileSupervisor;
+import com.emnify.cluster.messages.ClusterManagement;
 import com.emnify.cluster.messages.TransformationMessages.TransformationJob;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -9,12 +11,14 @@ import com.typesafe.config.ConfigFactory;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.cluster.sharding.ClusterSharding;
 import akka.dispatch.OnSuccess;
 import akka.util.Timeout;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,6 +33,14 @@ public class TransformationFrontendMain {
 
     ActorSystem system = ActorSystem.create("ClusterSystem", config);
 
+    // register Endpoint type ShardRegion actor in Proxy Only Mode
+    final ActorRef epShardRegionProxy = ClusterSharding.get(system).startProxy("Endpoint",
+        Optional.of("frontend"), ClusterManagement.MESSAGE_EXTRACTOR);
+    system.actorOf(Props.create(ProfileSupervisor.class, epShardRegionProxy), "profiles");
+
+
+
+    // Transformation Frontend
     final ActorRef frontend = system.actorOf(
         Props.create(TransformationFrontend.class), "frontend");
     final FiniteDuration interval = Duration.create(2, TimeUnit.SECONDS);

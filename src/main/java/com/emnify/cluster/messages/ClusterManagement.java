@@ -2,6 +2,7 @@ package com.emnify.cluster.messages;
 
 
 import akka.cluster.sharding.ShardRegion;
+import data.Endpoint;
 
 import java.io.Serializable;
 import java.util.Optional;
@@ -67,36 +68,114 @@ public interface ClusterManagement extends Serializable {
   }
 
   /**
+   * Query for an endpoint by Imsi
+   *
+   */
+  public static class QueryByImsi implements ClusterManagement {
+    private static final long serialVersionUID = 1L;
+    private final Serializable queryId;
+    private final String imsi;
+
+    /**
+     * @param queryId Serializable
+     * @param imsi String 
+     */
+    public QueryByImsi(Serializable queryId, String imsi) {
+      this.queryId = queryId;
+      this.imsi = imsi;
+    }
+
+    /**
+     * @param imsi String
+     */
+    public QueryByImsi(String imsi) {
+      this(null, imsi);
+    }
+
+    /**
+     * @return Optional of queryId
+     */
+    public Optional<Serializable> getQueryId() {
+      return Optional.ofNullable(queryId);
+    }
+
+    /**
+     * @return imsi String
+     */
+    public String getImsi() {
+      return imsi;
+    }
+  }
+
+
+  /**
+   * Query for an endpoint by Ip
+   *
+   */
+  public static class QueryByIp implements ClusterManagement {
+    private static final long serialVersionUID = 1L;
+    private final Serializable queryId;
+    private final String ip;
+
+    /**
+     * @param queryId Serializable
+     * @param ip String
+     */
+    public QueryByIp(Serializable queryId, String ip) {
+      this.queryId = queryId;
+      this.ip = ip;
+    }
+
+    /**
+     * @param ip String
+     */
+    public QueryByIp(String ip) {
+      this(null, ip);
+    }
+
+    /**
+     * @return Optional of queryId
+     */
+    public Optional<Serializable> getQueryId() {
+      return Optional.ofNullable(queryId);
+    }
+
+    /**
+     * @return ip String
+     */
+    public String getIp() {
+      return ip;
+    }
+  }
+
+  /**
    * Message for the result
    */
   public static class QueryResult implements ClusterManagement {
     private static final long serialVersionUID = 1L;
 
     private final Serializable queryId;
-    private final String ep;
+    private final Endpoint ep;
 
     /**
      * Constructor for result
      *
      * @param queryId Serializable
-     * @param ep String
+     * @param ep Endpoint
      */
-    public QueryResult(Serializable queryId, String ep) {
+    public QueryResult(Serializable queryId, Endpoint ep) {
       this.queryId = queryId;
       this.ep = ep;
     }
 
-
-
     /**
      * Constructor for successful retrieval
      *
-     * @param ep String
+     * @param ep Endpoint
      */
-    public QueryResult(String ep) {
+    public QueryResult(Endpoint ep) {
       this(null, ep);
     }
-
 
     /**
      * @return Serializable queryId
@@ -106,9 +185,9 @@ public interface ClusterManagement extends Serializable {
     }
 
     /**
-     * @return Ep String
+     * @return Ep Endpoint
      */
-    public String getEp() {
+    public Endpoint getEp() {
       return ep;
     }
 

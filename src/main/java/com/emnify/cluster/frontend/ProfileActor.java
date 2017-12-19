@@ -1,4 +1,4 @@
-package com.emnify.cluster.simple;
+package com.emnify.cluster.frontend;
 
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
 
@@ -9,16 +9,16 @@ import akka.event.LoggingAdapter;
 import data.Endpoint;
 
 /**
- * @author A team
+ * handle endpoint profile in the frontend node
  *
  */
-public class EndpointActor extends AbstractActor {
+public class ProfileActor extends AbstractActor {
   LoggingAdapter log = Logging.getLogger(getContext().system(), this);
-  private Endpoint ep;
+  private Endpoint endpoint;
 
-  public EndpointActor(Long id) {
-    ep = new Endpoint(id, "epName" + id, "112201234567890" + id, "111111" + id, "10.0.0.1", id + 1L,
-        id + 2L);
+  public ProfileActor(Endpoint ep) {
+    this.endpoint = ep;
+    log.info("ProfileActor initialised with {}", ep);
   }
 
 
@@ -26,11 +26,11 @@ public class EndpointActor extends AbstractActor {
   public Receive createReceive() {
     return receiveBuilder().match(QueryById.class, message -> {
       log.info("QueryById for id {}", message.getEndpointId());
-      getSender().tell(ep, getSelf());
+      getSender().tell(endpoint, getSelf());
     }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
 
-  public static Props props(Long id) {
-    return Props.create(EndpointActor.class, () -> new EndpointActor(id));
+  public static Props props(Endpoint ep) {
+    return Props.create(ProfileActor.class, () -> new ProfileActor(ep));
   }
 }
