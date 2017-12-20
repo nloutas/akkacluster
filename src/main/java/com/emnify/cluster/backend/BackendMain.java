@@ -28,8 +28,8 @@ public class BackendMain {
         Props.create(EndpointActor.class), settings, ClusterManagement.MESSAGE_EXTRACTOR);
 
     // start top actors
-    system.actorOf(Props.create(Backend.class), "backend");
     system.actorOf(Props.create(EndpointSupervisor.class, epShardingRegion), "endpoints");
+    system.actorOf(Props.create(Backend.class), "backend");
 
   }
 

@@ -13,13 +13,15 @@ import akka.event.Logging;
 import akka.event.LoggingAdapter;
 
 /**
- * @author A team
+ * Endpoint Supervisor
  *
  */
 public class EndpointSupervisor extends AbstractActor {
   LoggingAdapter log = Logging.getLogger(getContext().system(), this);
   private final ActorRef epShardingRegion;
   // final Key<ORMap<Long, Long>> imsi2epid = ORMapKey.create("imsi2epid");
+  private final Long port =
+      getContext().system().settings().config().getLong("akka.remote.netty.tcp.port");
 
   public EndpointSupervisor(ActorRef epShardingRegion) {
     this.epShardingRegion = epShardingRegion;
@@ -28,7 +30,7 @@ public class EndpointSupervisor extends AbstractActor {
   @Override
   public Receive createReceive() {
     return receiveBuilder().match(QueryById.class, message -> {
-      log.info("QueryById for id {}", message.getEndpointId());
+      log.info("BE {}: QueryById for id {}", port, message.getEndpointId());
       epRegion().forward(message, getContext());
     }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }

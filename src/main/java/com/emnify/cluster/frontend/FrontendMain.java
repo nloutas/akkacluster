@@ -2,7 +2,6 @@ package com.emnify.cluster.frontend;
 
 import static akka.pattern.Patterns.ask;
 
-import com.emnify.cluster.messages.ClusterManagement;
 import com.emnify.cluster.messages.TransformationMessages.TransformationJob;
 import com.typesafe.config.Config;
 import com.typesafe.config.ConfigFactory;
@@ -10,14 +9,12 @@ import com.typesafe.config.ConfigFactory;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.cluster.sharding.ClusterSharding;
 import akka.dispatch.OnSuccess;
 import akka.util.Timeout;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,19 +29,9 @@ public class FrontendMain {
       withFallback(ConfigFactory.load());
 
     system = ActorSystem.create("ClusterSystem", config);
+    system.actorOf(Props.create(ProfileSupervisor.class), "profiles");
 
-    // register Endpoint type ShardRegion actor in Proxy Only Mode
-    final ActorRef epShardRegionProxy = ClusterSharding.get(system).startProxy("Endpoint",
-        Optional.of("frontend"), ClusterManagement.MESSAGE_EXTRACTOR);
-    final ActorRef profileSupervisor =
-        system.actorOf(Props.create(ProfileSupervisor.class, epShardRegionProxy), "profiles");
-    // send a message to create actors for EP 1
-    profileSupervisor.tell(new ClusterManagement.QueryById(1L), ActorRef.noSender());
-
-
-    // Transformation Frontend
     // transformationMessaging();
-
   }
 
   private static void transformationMessaging() {
