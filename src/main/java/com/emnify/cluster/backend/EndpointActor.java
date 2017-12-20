@@ -1,6 +1,8 @@
 package com.emnify.cluster.backend;
 
+
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
+import com.emnify.cluster.messages.ClusterManagement.QueryByImsi;
 import com.emnify.cluster.messages.ClusterManagement.QueryResult;
 
 import akka.actor.AbstractActor;
@@ -40,18 +42,26 @@ public class EndpointActor extends AbstractActor {
   public Receive createReceive() {
     return receiveBuilder().match(QueryById.class, message -> {
       log.info("BE {}: QueryById for id {}", port, message.getEndpointId());
-      queryEp(message.getEndpointId());
-      getSender().tell(new QueryResult(ep), getSelf());
+      queryReply(message.getEndpointId());
+    }).match(QueryByImsi.class, message -> {
+      log.info("BE {}: QueryByImsi for imsi {}", port, message.getImsi());
+      queryReply(message.getImsi());
     }).matchEquals(ReceiveTimeout.getInstance(), msg -> passivate())
         .matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
 
-  private Endpoint queryEp(Long id) {
+  private void queryReply(Long id) {
     if (ep == null) {
-      ep = new Endpoint(id, "epName" + id, "112201234567890" + id, "111111" + id, "10.0.0.1",
-        id + 1L, id + 2L);
+      ep = new Endpoint(id, "epName" + id, "imsi", "msisdn", "ip", id % 10, id % 12);
     }
-    return ep;
+    getSender().tell(new QueryResult(ep), getSelf());
+  }
+
+  private void queryReply(String imsi) {
+    if (ep == null) {
+      ep = new Endpoint(null, "epName", imsi, "msisdn", "ip", 1L, 2L);
+    }
+    getSender().tell(new QueryResult(ep), getSelf());
   }
 
   private void passivate() {

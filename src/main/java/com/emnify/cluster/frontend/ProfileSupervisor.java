@@ -1,21 +1,27 @@
 package com.emnify.cluster.frontend;
 
+import com.emnify.cluster.messages.ClusterManagement;
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
+import com.emnify.cluster.messages.ClusterManagement.QueryByImsi;
+import com.emnify.cluster.messages.ClusterManagement.EntityEnvelope;
 import com.emnify.cluster.messages.ClusterManagement.QueryResult;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.actor.ReceiveTimeout;
 import akka.cluster.Cluster;
 import akka.cluster.ClusterEvent;
 import akka.cluster.Member;
+import akka.cluster.sharding.ClusterSharding;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
 import data.Endpoint;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -27,14 +33,16 @@ public class ProfileSupervisor extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(system, this);
   private final Cluster cluster = Cluster.get(system);
 
-  private final FiniteDuration INTERVAL = Duration.create(20, TimeUnit.SECONDS);
+  private final FiniteDuration SCHEDULE_DURATION = Duration.create(30, TimeUnit.SECONDS);
   private final ActorRef backendRoutingActor =
       getContext().actorOf(Props.create(BackendRoutingActor.class), "backendRoutingActor");
+  
+  // TODO https://doc.akka.io/docs/akka/2.5.8/cluster-sharding.html#proxy-only-mode
   // private final ActorRef epShardRegionProxy;
 
   public ProfileSupervisor() {
     // this.epShardRegionProxy = ClusterSharding.get(system).startProxy("Endpoint",
-    // Optional.empty(), ClusterManagement.MESSAGE_EXTRACTOR);
+    // Optional.of("frontend"), ClusterManagement.MESSAGE_EXTRACTOR);
   }
 
   @Override
@@ -53,11 +61,14 @@ public class ProfileSupervisor extends AbstractActor {
     }).match(ClusterEvent.MemberUp.class, message -> {
       Member member = message.member();
       if (member.hasRole("frontend")) {
-        // we joined the cluster, send QueryById messages for 2 Ids
+        // we joined the cluster, send QueryById messages
         sendQueryById(2551L);
         sendQueryById(2552L);
         cluster.unsubscribe(getSelf(), ClusterEvent.MemberUp.class);
       }
+    }).match(ReceiveTimeout.class, message -> {
+      log.info("ReceiveTimeout: {}", message.toString());
+      // TOOD handle timeout
     }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
 
@@ -67,10 +78,12 @@ public class ProfileSupervisor extends AbstractActor {
 
   private void sendQueryById(Long id) {
 
-    system.scheduler().schedule(Duration.Zero(), INTERVAL, new Runnable() {
+    system.scheduler().schedule(Duration.Zero(), SCHEDULE_DURATION, new Runnable() {
       @Override
       public void run() {
         backendRoutingActor.tell(new QueryById(id), getSelf());
+        backendRoutingActor.tell(new EntityEnvelope(id - 10L, new QueryByImsi("112201234567890")),
+            getSelf());
         getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
       }
     }, getContext().dispatcher());

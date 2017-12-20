@@ -16,11 +16,12 @@ public class BackendMain {
   public static void main(String[] args) {
     // Override the configuration of the port when specified as program argument
     final String port = args.length > 0 ? args[0] : "0";
-    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port).
-      withFallback(ConfigFactory.parseString("akka.cluster.roles = [backend]")).
-      withFallback(ConfigFactory.load());
+    final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port)
+        .withFallback(ConfigFactory.parseString("akka.cluster.roles = [backend,shardingNode]"))
+        .withFallback(ConfigFactory.load());
 
     ActorSystem system = ActorSystem.create("ClusterSystem", config);
+    system.actorOf(Props.create(Backend.class), "backend");
 
     // register Endpoint type in ClusterSharding Region
     ClusterShardingSettings settings = ClusterShardingSettings.create(system);
@@ -29,7 +30,6 @@ public class BackendMain {
 
     // start top actors
     system.actorOf(Props.create(EndpointSupervisor.class, epShardingRegion), "endpoints");
-    system.actorOf(Props.create(Backend.class), "backend");
 
   }
 
