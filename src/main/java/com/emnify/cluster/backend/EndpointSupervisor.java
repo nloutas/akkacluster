@@ -7,9 +7,6 @@ import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
-import akka.cluster.ddata.Key;
-import akka.cluster.ddata.ORMap;
-import akka.cluster.ddata.ORMapKey;
 import akka.cluster.sharding.ClusterSharding;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
@@ -23,7 +20,6 @@ public class EndpointSupervisor extends AbstractActor {
   private final ActorSystem system = getContext().system();
   private final LoggingAdapter log = Logging.getLogger(system, this);
   private final ActorRef epShardingRegion;
-  // final Key<ORMap<Long, Long>> imsi2epid = ORMapKey.create("imsi2epid");
   private final Long port =
       system.settings().config().getLong("akka.remote.netty.tcp.port");
 

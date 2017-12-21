@@ -107,6 +107,46 @@ public interface ClusterManagement extends Serializable {
     }
   }
 
+  /**
+   * Query for an endpoint by Msisdn
+   *
+   */
+  public static class QueryByMsisdn implements ClusterManagement {
+    private static final long serialVersionUID = 1L;
+    private final Serializable queryId;
+    private final String msisdn;
+
+    /**
+     * @param queryId Serializable
+     * @param msisdn String
+     */
+    public QueryByMsisdn(Serializable queryId, String msisdn) {
+      this.queryId = queryId;
+      this.msisdn = msisdn;
+    }
+
+    /**
+     * @param msisdn String
+     */
+    public QueryByMsisdn(String msisdn) {
+      this(null, msisdn);
+    }
+
+    /**
+     * @return Optional of queryId
+     */
+    public Optional<Serializable> getQueryId() {
+      return Optional.ofNullable(queryId);
+    }
+
+    /**
+     * @return msisdn String
+     */
+    public String getMsisdn() {
+      return msisdn;
+    }
+  }
+
 
   /**
    * Query for an endpoint by Ip

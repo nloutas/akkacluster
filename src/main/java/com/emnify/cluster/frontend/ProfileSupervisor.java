@@ -3,6 +3,7 @@ package com.emnify.cluster.frontend;
 import com.emnify.cluster.messages.ClusterManagement;
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
 import com.emnify.cluster.messages.ClusterManagement.QueryByImsi;
+import com.emnify.cluster.messages.ClusterManagement.QueryByMsisdn;
 import com.emnify.cluster.messages.ClusterManagement.EntityEnvelope;
 import com.emnify.cluster.messages.ClusterManagement.QueryResult;
 
@@ -33,7 +34,8 @@ public class ProfileSupervisor extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(system, this);
   private final Cluster cluster = Cluster.get(system);
 
-  private final FiniteDuration SCHEDULE_DURATION = Duration.create(30, TimeUnit.SECONDS);
+  private final FiniteDuration INITIAL = Duration.create(5, TimeUnit.SECONDS);
+  private final FiniteDuration INTERVAL = Duration.create(30, TimeUnit.SECONDS);
   private final ActorRef backendRoutingActor =
       getContext().actorOf(Props.create(BackendRoutingActor.class), "backendRoutingActor");
   
@@ -61,9 +63,8 @@ public class ProfileSupervisor extends AbstractActor {
     }).match(ClusterEvent.MemberUp.class, message -> {
       Member member = message.member();
       if (member.hasRole("frontend")) {
-        // we joined the cluster, send QueryById messages
-        sendQueryById(2551L);
-        sendQueryById(2552L);
+        // we joined the cluster, send Query messages
+        scheduleQueries();
         cluster.unsubscribe(getSelf(), ClusterEvent.MemberUp.class);
       }
     }).match(ReceiveTimeout.class, message -> {
@@ -76,13 +77,21 @@ public class ProfileSupervisor extends AbstractActor {
     return getContext().actorOf(ProfileActor.props(ep));
   }
 
+  private void scheduleQueries() {
+    sendQueryById(2551L);
+    sendQueryById(2552L);
+    sendQueryById(2553L);
+  }
+
   private void sendQueryById(Long id) {
 
-    system.scheduler().schedule(Duration.Zero(), SCHEDULE_DURATION, new Runnable() {
+    system.scheduler().schedule(INITIAL, INTERVAL, new Runnable() {
       @Override
       public void run() {
         backendRoutingActor.tell(new QueryById(id), getSelf());
-        backendRoutingActor.tell(new EntityEnvelope(id - 10L, new QueryByImsi("01234567890" + id)),
+        backendRoutingActor.tell(new EntityEnvelope(id, new QueryByImsi("01234567890" + id)),
+            getSelf());
+        backendRoutingActor.tell(new EntityEnvelope(id, new QueryByMsisdn("1111" + id)),
             getSelf());
         getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
       }
