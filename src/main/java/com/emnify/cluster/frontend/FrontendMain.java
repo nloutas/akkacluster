@@ -31,7 +31,7 @@ public class FrontendMain {
     system = ActorSystem.create("ClusterSystem", config);
     system.actorOf(Props.create(ProfileSupervisor.class), "profiles");
 
-    // transformationMessaging();
+    // disabled to focus on sharding: transformationMessaging();
   }
 
   private static void transformationMessaging() {
