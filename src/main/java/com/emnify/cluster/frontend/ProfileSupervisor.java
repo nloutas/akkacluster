@@ -22,7 +22,7 @@ import data.Endpoint;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,10 +34,15 @@ public class ProfileSupervisor extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(system, this);
   private final Cluster cluster = Cluster.get(system);
 
-  private final FiniteDuration INITIAL = Duration.create(5, TimeUnit.SECONDS);
-  private final FiniteDuration INTERVAL = Duration.create(30, TimeUnit.SECONDS);
+
   private final ActorRef backendRoutingActor =
       getContext().actorOf(Props.create(BackendRoutingActor.class), "backendRoutingActor");
+  
+  private final ConcurrentHashMap<Long, Long> performance = new ConcurrentHashMap<Long, Long>();
+  private final FiniteDuration INITIAL = Duration.create(10, TimeUnit.SECONDS);
+  private final FiniteDuration INTERVAL = Duration.create(2, TimeUnit.SECONDS);
+  private final int MSG_PER_INTERVAL = 30;
+  private Long epId = 0L;
   
   // TODO https://doc.akka.io/docs/akka/2.5.8/cluster-sharding.html#proxy-only-mode
   // private final ActorRef epShardRegionProxy;
@@ -59,6 +64,9 @@ public class ProfileSupervisor extends AbstractActor {
       // epShardRegionProxy.forward(message, getContext());
       backendRoutingActor.forward(message, getContext());
     }).match(QueryResult.class, message -> {
+      long epId = message.getEp().getId();
+      long t = System.currentTimeMillis() - performance.getOrDefault(epId, 0L);
+      log.info("QueryResult for Endpoint id {} after {} ms ", epId, t);
       getProfileActor(message.getEp());
     }).match(ClusterEvent.MemberUp.class, message -> {
       Member member = message.member();
@@ -78,22 +86,21 @@ public class ProfileSupervisor extends AbstractActor {
   }
 
   private void scheduleQueries() {
-    sendQueryById(2551L);
-    sendQueryById(2552L);
-    sendQueryById(2553L);
-  }
-
-  private void sendQueryById(Long id) {
 
     system.scheduler().schedule(INITIAL, INTERVAL, new Runnable() {
       @Override
       public void run() {
-        backendRoutingActor.tell(new QueryById(id), getSelf());
-        backendRoutingActor.tell(new EntityEnvelope(id, new QueryByImsi("01234567890" + id)),
-            getSelf());
-        backendRoutingActor.tell(new EntityEnvelope(id, new QueryByMsisdn("1111" + id)),
-            getSelf());
-        getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
+        // send queries
+        for (int i = 0; i < MSG_PER_INTERVAL; i++) {
+          epId++;
+          performance.put(epId, System.currentTimeMillis());
+          backendRoutingActor.tell(new QueryById(epId), getSelf());
+          backendRoutingActor.tell(new EntityEnvelope(epId, new QueryByImsi("01234567890" + epId)),
+              getSelf());
+          backendRoutingActor.tell(new EntityEnvelope(epId, new QueryByMsisdn("1111" + epId)),
+              getSelf());
+          getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
+        }
       }
     }, getContext().dispatcher());
   }
