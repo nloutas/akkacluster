@@ -4,7 +4,6 @@ import com.emnify.cluster.messages.ClusterManagement;
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
 import com.emnify.cluster.messages.ClusterManagement.QueryByImsi;
 import com.emnify.cluster.messages.ClusterManagement.QueryByMsisdn;
-import com.emnify.cluster.messages.ClusterManagement.EntityEnvelope;
 import com.emnify.cluster.messages.ClusterManagement.QueryResult;
 
 import akka.actor.AbstractActor;
@@ -95,12 +94,12 @@ public class ProfileSupervisor extends AbstractActor {
           epId++;
           performance.put(epId, System.currentTimeMillis());
           backendRoutingActor.tell(new QueryById(epId), getSelf());
-          backendRoutingActor.tell(new EntityEnvelope(epId, new QueryByImsi("01234567890" + epId)),
-              getSelf());
-          backendRoutingActor.tell(new EntityEnvelope(epId, new QueryByMsisdn("1111" + epId)),
-              getSelf());
+          backendRoutingActor.tell(new QueryByImsi("0123456789" + epId), getSelf());
+          backendRoutingActor.tell(new QueryByMsisdn("1111" + epId), getSelf());
           getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
         }
+        if (epId > 1000L)
+          epId = 0L; // recycle
       }
     }, getContext().dispatcher());
   }

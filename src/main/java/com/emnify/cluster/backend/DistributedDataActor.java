@@ -1,8 +1,9 @@
 package com.emnify.cluster.backend;
 
-import com.emnify.cluster.messages.DistributedDataManagement.TranslateImsi;
-import com.emnify.cluster.messages.DistributedDataManagement.TranslateMsisdn;
-import com.emnify.cluster.messages.DistributedDataManagement.TranslateResult;
+
+import com.emnify.cluster.messages.ClusterManagement.EntityEnvelope;
+import com.emnify.cluster.messages.ClusterManagement.QueryByImsi;
+import com.emnify.cluster.messages.ClusterManagement.QueryByMsisdn;
 
 import com.emnify.cluster.messages.DistributedDataManagement.UpdateImsiMapping;
 import com.emnify.cluster.messages.DistributedDataManagement.UpdateMsisdnMapping;
@@ -16,14 +17,18 @@ import akka.cluster.ddata.DistributedData;
 import akka.cluster.ddata.Key;
 import akka.cluster.ddata.LWWMap;
 import akka.cluster.ddata.LWWMapKey;
+import akka.cluster.ddata.Replicator;
 import akka.cluster.ddata.Replicator.WriteConsistency;
 import akka.cluster.ddata.Replicator.WriteMajority;
+import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.ddata.Replicator.Changed;
 import akka.cluster.ddata.Replicator.Subscribe;
 import akka.cluster.ddata.Replicator.Update;
 import akka.cluster.ddata.Replicator.UpdateResponse;
 import akka.event.Logging;
 import akka.event.LoggingAdapter;
+
+import scala.runtime.AbstractFunction0;
 import scala.concurrent.duration.Duration;
 
 import java.util.Map;
@@ -55,6 +60,7 @@ public class DistributedDataActor extends AbstractActor {
 
   public DistributedDataActor() {
   }
+
   @Override
   public void preStart() {
     replicator.tell(new Subscribe<>(imsi2idKey, self()), ActorRef.noSender());
@@ -66,8 +72,8 @@ public class DistributedDataActor extends AbstractActor {
   @Override
   public Receive createReceive() {
     return receiveBuilder() 
-        .match(TranslateImsi.class, msg -> translateImsi(msg))
-        .match(TranslateMsisdn.class, msg -> translateMsisdn(msg))
+        .match(QueryByImsi.class, msg -> queryByImsi(msg))
+        .match(QueryByMsisdn.class, msg -> queryByMsisdn(msg))
         .match(UpdateImsiMapping.class, msg -> updateImsiMapping(msg))
         .match(UpdateMsisdnMapping.class, msg -> updateMsisdnMapping(msg))
         .match(Changed.class, c -> c.key().equals(imsi2idKey),
@@ -78,22 +84,42 @@ public class DistributedDataActor extends AbstractActor {
         }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
 
-  private void translateImsi(TranslateImsi msg) {
-    // use local - fastest
-    Long id = imsi2idMap.get(msg.getImsi()).get();
-    // or ask the replicator?
-    // replicator.tell(new Replicator.Get<LWWMap<String, Long>>(imsi2idKey, readMajority,
-    // Optional.of(getSender())), getSelf());
-    sender().tell(new TranslateResult(id), getSelf());
+  private ActorRef epRegion() {
+    return ClusterSharding.get(system).shardRegion("Endpoint");
   }
 
-  private void translateMsisdn(TranslateMsisdn msg) {
-    // use local - fastest
-    Long id = msisdn2idMap.get(msg.getMsisdn()).get();
-    // or ask the replicator?
-    // replicator.tell(new Replicator.Get<LWWMap<String, Long>>(imsi2idKey, readMajority,
-    // Optional.of(getSender())), getSelf());
-    sender().tell(new TranslateResult(id), getSelf());
+  private void queryByImsi(QueryByImsi msg) {
+    String imsi = msg.getImsi();
+    Long epId = imsi2idMap.get(msg.getImsi()).getOrElse(new AbstractFunction0<Long>() {
+      @Override
+      public Long apply() {
+        Long epId = new Long(imsi.substring(10));
+        log.info("queryByImsi: no mapping for imsi {}, defaulting to {}", imsi, epId);
+        // ask the replicator?
+        // replicator.tell(new Replicator.Get<LWWMap<String, Long>>(imsi2idKey, readMajority,
+        // Optional.of(getSender())), getSelf());
+        return epId;
+      }
+    });
+
+    epRegion().forward(new EntityEnvelope(epId, msg), getContext());
+  }
+
+  private void queryByMsisdn(QueryByMsisdn msg) { 
+    String msisdn = msg.getMsisdn();
+    Long epId = msisdn2idMap.get(msg.getMsisdn()).getOrElse(new AbstractFunction0<Long>() {
+      @Override
+      public Long apply() {
+        Long epId = new Long(msisdn.substring(4));
+        log.info("queryByMsisdn: no mapping for msisdn {}, defaulting to {}", msisdn, epId);
+        // ask the replicator?
+        // replicator.tell(new Replicator.Get<LWWMap<String, Long>>(msisdn2idMap, readMajority,
+        // Optional.of(getSender())), getSelf());
+        return epId;
+      }
+    });
+
+    epRegion().forward(new EntityEnvelope(epId, msg), getContext());
   }
 
   private void updateImsiMapping(UpdateImsiMapping msg) {
@@ -101,7 +127,8 @@ public class DistributedDataActor extends AbstractActor {
     imsi2idMap.put(node, msg.getImsi(), msg.getEndpointId());
 
     Update<LWWMap<String, Long>> update = new Update<LWWMap<String, Long>>(imsi2idKey,
-        imsi2idMap, writeMajority, curr -> curr.put(node, msg.getImsi(), msg.getEndpointId()));
+        imsi2idMap, Replicator.writeLocal(),
+        curr -> curr.put(node, msg.getImsi(), msg.getEndpointId()));
     replicator.tell(update, self());
   }
 
@@ -110,7 +137,7 @@ public class DistributedDataActor extends AbstractActor {
     msisdn2idMap.put(node, msg.getMsisdn(), msg.getEndpointId());
 
     Update<LWWMap<String, Long>> update =
-        new Update<LWWMap<String, Long>>(msisdn2idKey, msisdn2idMap, writeMajority,
+        new Update<LWWMap<String, Long>>(msisdn2idKey, msisdn2idMap, Replicator.writeLocal(),
             curr -> curr.put(node, msg.getMsisdn(), msg.getEndpointId()));
     replicator.tell(update, self());
   }

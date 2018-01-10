@@ -27,10 +27,10 @@ public class BackendMain {
 
     // register Endpoint type in ClusterSharding Region
     ClusterShardingSettings settings = ClusterShardingSettings.create(system);
-    final ActorRef epShardingRegion = ClusterSharding.get(system).start("Endpoint",
-        Props.create(EndpointActor.class, ddata), settings, ClusterManagement.MESSAGE_EXTRACTOR);
+    ClusterSharding.get(system).start("Endpoint", Props.create(EndpointActor.class, ddata),
+        settings, ClusterManagement.MESSAGE_EXTRACTOR);
 
     // start top actor(s)
-    system.actorOf(Props.create(EndpointSupervisor.class, epShardingRegion), "endpoints");
+    system.actorOf(Props.create(EndpointSupervisor.class, ddata), "endpoints");
   }
 }

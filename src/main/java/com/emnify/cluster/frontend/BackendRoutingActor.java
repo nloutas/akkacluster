@@ -1,7 +1,6 @@
 package com.emnify.cluster.frontend;
 
-import com.emnify.cluster.messages.ClusterManagement.EntityEnvelope;
-import com.emnify.cluster.messages.ClusterManagement.QueryById;
+import com.emnify.cluster.messages.ClusterManagement;
 
 import akka.actor.ActorRef;
 import akka.actor.AbstractActor;
@@ -21,14 +20,9 @@ public class BackendRoutingActor extends AbstractActor {
 
   @Override
   public Receive createReceive() {
-    return receiveBuilder().match(QueryById.class, message -> {
-      log.info("QueryById for id {}", message.getEndpointId());
-      backend.forward(message, getContext());
-    }).match(EntityEnvelope.class, message -> {
-      log.info("EntityEnvelope for id {}", message.id);
+    return receiveBuilder().match(ClusterManagement.class, message -> {
       backend.forward(message, getContext());
     }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
-
 
 }

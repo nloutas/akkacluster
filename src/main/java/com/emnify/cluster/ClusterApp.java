@@ -7,9 +7,9 @@ public class ClusterApp {
 
   public static void main(String[] args) {
     // start multiple frontend and backend nodes
-    BackendMain.main(new String[] {"2551"});
-    BackendMain.main(new String[] {"2552"});
-    // BackendMain.main(new String[0]);
+    for (int i = 0; i < 5; i++) {
+      BackendMain.main(new String[] {"255" + i});
+    }
     FrontendMain.main(new String[] {"2500"});
   }
 }

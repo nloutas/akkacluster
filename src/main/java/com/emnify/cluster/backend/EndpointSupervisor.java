@@ -2,6 +2,8 @@ package com.emnify.cluster.backend;
 
 import com.emnify.cluster.messages.ClusterManagement.EntityEnvelope;
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
+import com.emnify.cluster.messages.ClusterManagement.QueryByImsi;
+import com.emnify.cluster.messages.ClusterManagement.QueryByMsisdn;
 
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
@@ -19,12 +21,12 @@ import akka.event.LoggingAdapter;
 public class EndpointSupervisor extends AbstractActor {
   private final ActorSystem system = getContext().system();
   private final LoggingAdapter log = Logging.getLogger(system, this);
-  private final ActorRef epShardingRegion;
+  private final ActorRef ddata;
   private final Long port =
       system.settings().config().getLong("akka.remote.netty.tcp.port");
 
-  public EndpointSupervisor(ActorRef epShardingRegion) {
-    this.epShardingRegion = epShardingRegion;
+  public EndpointSupervisor(ActorRef ddata) {
+    this.ddata = ddata;
   }
 
   @Override
@@ -32,6 +34,10 @@ public class EndpointSupervisor extends AbstractActor {
     return receiveBuilder().match(QueryById.class, message -> {
       log.info("BE {}: QueryById for id {}", port, message.getEndpointId());
       epRegion().forward(message, getContext());
+    }).match(QueryByImsi.class, message -> {
+      ddata.forward(message, getContext());
+    }).match(QueryByMsisdn.class, message -> {
+      ddata.forward(message, getContext());
     }).match(EntityEnvelope.class, message -> {
       log.info("BE {}: EntityEnvelope for id {}", port, message.id);
       epRegion().forward(message, getContext());
@@ -44,7 +50,7 @@ public class EndpointSupervisor extends AbstractActor {
   }
 
 
-  public static Props props(ActorRef epShardingRegion) {
-    return Props.create(EndpointSupervisor.class, () -> new EndpointSupervisor(epShardingRegion));
+  public static Props props(ActorRef ddata) {
+    return Props.create(EndpointSupervisor.class, () -> new EndpointSupervisor(ddata));
   }
 }
