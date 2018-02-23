@@ -19,7 +19,7 @@ public class BackendMain {
         .withFallback(ConfigFactory.parseString("akka.cluster.roles = [backend,sharding]"))
         .withFallback(ConfigFactory.load());
 
-    ActorSystem system = ActorSystem.create("ClusterSystem", config);
+    ActorSystem system = ActorSystem.create("ClusterSystem", config.resolve());
     system.actorOf(Props.create(Backend.class), "backend");
 
     // register Endpoint type in ClusterSharding Region

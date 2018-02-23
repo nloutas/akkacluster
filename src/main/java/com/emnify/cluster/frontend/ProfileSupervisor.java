@@ -9,6 +9,7 @@ import com.emnify.cluster.messages.ClusterManagement.QueryResult;
 import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Cancellable;
 import akka.actor.Props;
 import akka.actor.ReceiveTimeout;
 import akka.cluster.Cluster;
@@ -21,7 +22,7 @@ import data.Endpoint;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
 
-import java.util.Optional;
+import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,10 +34,13 @@ public class ProfileSupervisor extends AbstractActor {
   private final LoggingAdapter log = Logging.getLogger(system, this);
   private final Cluster cluster = Cluster.get(system);
 
+  private final FiniteDuration INITIAL_DURATION = Duration.create(1, TimeUnit.SECONDS);
   private final FiniteDuration SCHEDULE_DURATION = Duration.create(30, TimeUnit.SECONDS);
   private final ActorRef backendRoutingActor =
       getContext().actorOf(Props.create(BackendRoutingActor.class), "backendRoutingActor");
   
+  private ArrayList<Cancellable> scheduledQueries = new ArrayList<Cancellable>();
+
   // TODO https://doc.akka.io/docs/akka/2.5.8/cluster-sharding.html#proxy-only-mode
   // private final ActorRef epShardRegionProxy;
 
@@ -51,6 +55,11 @@ public class ProfileSupervisor extends AbstractActor {
   }
 
   @Override
+  public void postStop() {
+    scheduledQueries.forEach(c -> c.cancel());
+  }
+
+  @Override
   public Receive createReceive() {
     return receiveBuilder().match(QueryById.class, message -> {
       log.info("QueryById for id {}", message.getEndpointId());
@@ -61,10 +70,10 @@ public class ProfileSupervisor extends AbstractActor {
     }).match(ClusterEvent.MemberUp.class, message -> {
       Member member = message.member();
       if (member.hasRole("frontend")) {
+        cluster.unsubscribe(getSelf(), ClusterEvent.MemberUp.class);
         // we joined the cluster, send QueryById messages
         sendQueryById(2551L);
         sendQueryById(2552L);
-        cluster.unsubscribe(getSelf(), ClusterEvent.MemberUp.class);
       }
     }).match(ReceiveTimeout.class, message -> {
       log.info("ReceiveTimeout");
@@ -78,15 +87,16 @@ public class ProfileSupervisor extends AbstractActor {
 
   private void sendQueryById(Long id) {
 
-    system.scheduler().schedule(Duration.Zero(), SCHEDULE_DURATION, new Runnable() {
-      @Override
-      public void run() {
-        backendRoutingActor.tell(new QueryById(id), getSelf());
-        backendRoutingActor.tell(new EntityEnvelope(id - 10L, new QueryByImsi("01234567890" + id)),
-            getSelf());
-        getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
-      }
-    }, getContext().dispatcher());
+    scheduledQueries
+        .add(system.scheduler().schedule(INITIAL_DURATION, SCHEDULE_DURATION, new Runnable() {
+          @Override
+          public void run() {
+            backendRoutingActor.tell(new QueryById(id), getSelf());
+            backendRoutingActor
+                .tell(new EntityEnvelope(id - 10L, new QueryByImsi("01234567890" + id)), getSelf());
+            getContext().setReceiveTimeout(Duration.create(5, TimeUnit.SECONDS));
+          }
+        }, getContext().dispatcher()));
   }
 
   public static Props props() {
