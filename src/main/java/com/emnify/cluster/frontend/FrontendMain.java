@@ -28,7 +28,7 @@ public class FrontendMain {
         .withFallback(ConfigFactory.parseString("akka.cluster.roles = [frontend]"))
         .withFallback(ConfigFactory.load());
 
-    system = ActorSystem.create("ClusterSystem", config);
+    system = ActorSystem.create("ClusterSystem", config.resolve());
     system.actorOf(Props.create(ProfileSupervisor.class), "profiles");
 
     // disabled to focus on sharding: transformationMessaging();

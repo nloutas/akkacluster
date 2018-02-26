@@ -10,7 +10,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <akka.version>2.5.8</akka.version>
+    <akka.version>2.5.10</akka.version>
+    <pittest.version>1.3.2</pittest.version>
   </properties>
 
   <reporting>
@@ -53,6 +54,18 @@
         </reportSets>
       </plugin>
 
+      <plugin>
+            <groupId>org.pitest</groupId>
+            <artifactId>pitest-maven</artifactId>
+            <version>${pittest.version}</version>
+            <reportSets>
+                <reportSet>
+                    <reports>
+                        <report>report</report>
+                    </reports>
+                </reportSet>
+            </reportSets>
+        </plugin>
     </plugins>
   </reporting>
 
@@ -98,6 +111,12 @@
       <artifactId>logback-classic</artifactId>
       <version>1.2.3</version>
     </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -125,6 +144,22 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
+      </plugin>
+
+      <plugin>
+        <groupId>org.pitest</groupId>
+        <artifactId>pitest-maven</artifactId>
+        <version>${pittest.version}</version>
+        <configuration>
+            <targetClasses>
+                <param>com.emnify.cluster.*</param>
+            </targetClasses>
+            <targetTests>
+                <param>com.emnify.cluster.*</param>
+            </targetTests>
+            <timeoutConst>10000</timeoutConst>
+            <withHistory>true</withHistory>
+        </configuration>
       </plugin>
     </plugins>
   </build>
