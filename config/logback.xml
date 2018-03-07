@@ -3,7 +3,7 @@
         <file>logs/application.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>logs/scf-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>logs/application-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <timeBasedFileNamingAndTriggeringPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <!-- or whenever the file size reaches 10MB -->
@@ -12,13 +12,13 @@
             <maxHistory>5</maxHistory>
         </rollingPolicy>
         <encoder>
-            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{machineId} %X{nodeId} - %msg%n</pattern>
+            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{node} %X{port} - %msg%n</pattern>
         </encoder>
     </appender>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{machineId} %X{nodeId} - %msg%n</pattern>
+            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{node} %X{port} - %msg%n</pattern>
         </encoder>
     </appender>
 
