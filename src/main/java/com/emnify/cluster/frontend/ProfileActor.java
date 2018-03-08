@@ -1,6 +1,7 @@
 package com.emnify.cluster.frontend;
 
 import com.emnify.cluster.messages.ClusterManagement.QueryById;
+import com.emnify.cluster.messages.ClusterManagement.QueryResult;
 
 import akka.actor.AbstractActor;
 import akka.actor.Props;
@@ -18,7 +19,7 @@ public class ProfileActor extends AbstractActor {
 
   public ProfileActor(Endpoint ep) {
     this.endpoint = ep;
-    log.info("ProfileActor initialised with {}", ep);
+    log.info("ProfileActor initialised with {} under path {}", ep, self().path());
   }
 
 
@@ -26,7 +27,7 @@ public class ProfileActor extends AbstractActor {
   public Receive createReceive() {
     return receiveBuilder().match(QueryById.class, message -> {
       log.info("QueryById for id {}", message.getEndpointId());
-      getSender().tell(endpoint, getSelf());
+      getSender().tell(new QueryResult(endpoint), getSelf());
     }).matchAny(o -> log.warning("received unknown message: {}", o)).build();
   }
 

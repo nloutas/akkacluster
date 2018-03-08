@@ -9,6 +9,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.cluster.sharding.ClusterSharding;
 import akka.cluster.sharding.ClusterShardingSettings;
+import org.slf4j.MDC;
 
 public class BackendMain {
 
@@ -18,6 +19,10 @@ public class BackendMain {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port)
         .withFallback(ConfigFactory.parseString("akka.cluster.roles = [backend,sharding]"))
         .withFallback(ConfigFactory.load());
+
+    //TODO: check why logback does not pick it up and use it in the logging pattern
+    MDC.put("node", "backend");
+    MDC.put("port", port);
 
     ActorSystem system = ActorSystem.create("ClusterSystem", config.resolve());
     system.actorOf(Props.create(Backend.class), "backend");

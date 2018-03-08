@@ -11,6 +11,7 @@ import akka.actor.ActorSystem;
 import akka.actor.Props;
 import akka.dispatch.OnSuccess;
 import akka.util.Timeout;
+import org.slf4j.MDC;
 import scala.concurrent.ExecutionContext;
 import scala.concurrent.duration.Duration;
 import scala.concurrent.duration.FiniteDuration;
@@ -27,6 +28,10 @@ public class FrontendMain {
     final Config config = ConfigFactory.parseString("akka.remote.netty.tcp.port=" + port)
         .withFallback(ConfigFactory.parseString("akka.cluster.roles = [frontend]"))
         .withFallback(ConfigFactory.load());
+
+    //TODO: check why logback does not pick it up and use it in the logging pattern
+    MDC.put("node", "frontend");
+    MDC.put("port", port);
 
     system = ActorSystem.create("ClusterSystem", config.resolve());
     system.actorOf(Props.create(ProfileSupervisor.class), "profiles");

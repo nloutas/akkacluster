@@ -2,12 +2,12 @@
   <appender name="FILE" class="ch.qos.logback.core.FileAppender">
         <file>logs/application-test.log</file>
         <encoder>
-            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{machineId} %X{nodeId} - %msg%n</pattern>
+            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{node} %X{port} - %msg%n</pattern>
         </encoder>
   </appender>
   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{machineId} %X{nodeId} - %msg%n</pattern>
+      <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{node} %X{port} - %msg%n</pattern>
     </encoder>
   </appender>
 
