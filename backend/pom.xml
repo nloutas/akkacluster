@@ -23,6 +23,9 @@
         <groupId>org.pitest</groupId>
         <artifactId>pitest-maven</artifactId>
         <version>${pittest.version}</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
         <reportSets>
         <reportSet>
           <reports>
