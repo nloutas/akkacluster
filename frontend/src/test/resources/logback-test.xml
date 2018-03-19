@@ -1,0 +1,26 @@
+<configuration>
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/application-test.log</file>
+        <encoder>
+            <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{node} %X{port} - %msg%n</pattern>
+        </encoder>
+  </appender>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%X{akkaTimestamp} %-5level %logger{36} %X{akkaSource} %X{node} %X{port} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="akka.cluster" level="INFO"/>
+
+  <statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+ 
+  <root level="DEBUG">
+    <appender-ref ref="FILE" />
+    <if condition='isDefined("log.stdout")'>
+      <then>
+        <appender-ref ref="STDOUT" />
+      </then>
+    </if>
+  </root>
+</configuration>

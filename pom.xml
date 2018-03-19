@@ -1,27 +1,38 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.emnify.esc</groupId>
+  <groupId>demo.akka</groupId>
   <artifactId>akkacluster</artifactId>
   <version>0.0.3-SNAPSHOT</version> 
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
+  <url>${site.deployUrl}</url>
   <name>akkacluster</name>
 
   <properties>
+    <site.deployUrl>https://github.com/nloutas/akkacluster/wiki</site.deployUrl>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <checkstyle.xml>src/main/resources/checkstyle.xml</checkstyle.xml>
-    <assembly.xml>src/main/resources/assembly.xml</assembly.xml>
+    <rootdir>${basedir}</rootdir>
+    <checkstyle.xml>${rootdir}/config/checkstyle.xml</checkstyle.xml>
+    <assembly.xml>${rootdir}/config/assembly.xml</assembly.xml>
     <akka.version>2.5.11</akka.version>
     <pittest.version>1.3.2</pittest.version>
   </properties>
 
+  <modules>
+    <module>frontend</module>
+    <module>backend</module>
+    <module>common</module> 
+  </modules>
+
   <reporting>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.10.3</version>
         <reportSets>
           <reportSet>
             <reports>
@@ -33,6 +44,7 @@
       </plugin>
 
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jxr-plugin</artifactId>
         <version>2.5</version>
         <reportSets>
@@ -43,6 +55,12 @@
             </reports>
           </reportSet>
         </reportSets>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.9</version>
       </plugin>
 
       <plugin>
@@ -76,19 +94,6 @@
         </reportSets>
       </plugin>
 
-      <!-- execute with "mvn org.pitest:pitest-maven:mutationCoverage site"-->
-      <plugin>
-        <groupId>org.pitest</groupId>
-        <artifactId>pitest-maven</artifactId>
-        <version>${pittest.version}</version>
-        <reportSets>
-        <reportSet>
-          <reports>
-            <report>report</report>
-          </reports>
-        </reportSet>
-        </reportSets>
-      </plugin>
     </plugins>
   </reporting>
 
@@ -163,77 +168,6 @@
         </configuration>
       </plugin>
 
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.6.0</version>
-        <configuration>
-          <killAfter>-1</killAfter>
-          <mainClass>com.emnify.cluster.ClusterApp</mainClass>
-          <additionalClasspathElements>
-            <additionalClasspathElement>${basedir}/config</additionalClasspathElement>
-          </additionalClasspathElements>
-        
-          <systemProperties>
-            <systemProperty>
-              <key>akka.home</key>
-              <value>${basedir}</value>
-            </systemProperty>
-          </systemProperties>
-        </configuration>
-      </plugin>
- 
-      <plugin> 
-        <artifactId>maven-jar-plugin</artifactId> 
-        <configuration>
-          <archive>
-            <index>true</index>
-            <manifest>
-              <addClasspath>true</addClasspath>
-              <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>com.emnify.cluster.ClusterApp</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin> 
-
-      <plugin>
-        <groupId>org.pitest</groupId>
-        <artifactId>pitest-maven</artifactId>
-        <version>${pittest.version}</version>
-        <configuration>
-            <targetClasses>
-                <param>com.emnify.cluster.*</param>
-            </targetClasses>
-            <targetTests>
-                <param>com.emnify.cluster.*</param>
-            </targetTests>
-            <timeoutConst>10000</timeoutConst>
-            <withHistory>true</withHistory>
-        </configuration>
-      </plugin>
- 
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4</version>
-        <executions>
-          <execution>
-            <id>create-assembly</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <appendAssemblyId>false</appendAssemblyId>
-              <descriptors>
-                <descriptor>${assembly.xml}</descriptor>
-              </descriptors>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-
     </plugins>
     
     <pluginManagement>
@@ -252,4 +186,11 @@
     </pluginManagement>
   </build>
 
+  <distributionManagement>
+    <site>
+      <id>akka-demo</id>
+      <name>Akka Demo Project Site</name>
+      <url>${site.deployUrl}</url>
+    </site>
+  </distributionManagement>
 </project>
